@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Repo Sync</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f3f4f6;
+        color: #111827;
+      }
+
+      .container {
+        max-width: 860px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      input {
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+      }
+
+      button {
+        margin-top: 16px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #111827;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 12px;
+        border-radius: 8px;
+        min-height: 100px;
+        white-space: pre-wrap;
+      }
+
+      .status {
+        margin-top: 12px;
+        font-weight: bold;
+      }
+
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>אוטומציית סנכרון ריפו ב-GitHub</h1>
+      <p>
+        ממלאים את הפרטים, והמערכת תמשוך תוכן מריפו מקור, תיצור סניף חדש בריפו יעד, ותעלה אליו commit.
+      </p>
+
+      <form id="syncForm" class="grid">
+        <label class="field">
+          <span>Source Repo</span>
+          <input name="sourceRepo" placeholder="owner/source-repo" required />
+        </label>
+
+        <label class="field">
+          <span>Source Branch</span>
+          <input name="sourceBranch" placeholder="main" value="main" />
+        </label>
+
+        <label class="field">
+          <span>Target Repo</span>
+          <input name="targetRepo" placeholder="owner/target-repo" required />
+        </label>
+
+        <label class="field">
+          <span>Target Base Branch</span>
+          <input name="targetBaseBranch" placeholder="main" value="main" />
+        </label>
+
+        <label class="field">
+          <span>New Branch Name</span>
+          <input name="newBranch" placeholder="sync/source-main-2026-04-19" required />
+        </label>
+
+        <label class="field">
+          <span>Commit Message</span>
+          <input name="commitMessage" placeholder="Sync from source repo" />
+        </label>
+
+        <label class="field full">
+          <span>GitHub Token (optional if set on server as GITHUB_TOKEN)</span>
+          <input name="githubToken" type="password" placeholder="ghp_..." />
+        </label>
+
+        <div class="field full">
+          <button type="submit">הרץ סנכרון</button>
+        </div>
+      </form>
+
+      <div class="status" id="status"></div>
+      <pre id="logs">לוגים יופיעו כאן...</pre>
+    </div>
+
+    <script>
+      const form = document.getElementById("syncForm");
+      const statusEl = document.getElementById("status");
+      const logsEl = document.getElementById("logs");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        statusEl.textContent = "מריץ...";
+        logsEl.textContent = "";
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        const response = await fetch("/api/sync", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          statusEl.textContent = `❌ נכשל: ${data.details || data.error || "Unknown error"}`;
+          logsEl.textContent = (data.logs || []).join("\n");
+          return;
+        }
+
+        statusEl.textContent = data.pushed
+          ? `✅ הושלם בהצלחה. נוצר/עודכן סניף: ${data.branch}`
+          : `✅ הושלם ללא שינויים. סניף: ${data.branch}`;
+
+        logsEl.textContent = (data.logs || []).join("\n");
+      });
+    </script>
+  </body>
+</html>

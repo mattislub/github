@@ -1,0 +1,16 @@
+{
+  "name": "github-repo-sync-automation",
+  "version": "1.0.0",
+  "description": "Node.js automation server to sync one GitHub repo into another and create a new branch via visual UI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "check": "node --check server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
